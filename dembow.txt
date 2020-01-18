@@ -11,12 +11,12 @@ live_loop :snare do
   sample :drum_tom_mid_soft
   sleep 0.75
   with_fx :echo do |r|
-    if one_in(12)
-      control r, phase: 0.25
+    if one_in(1)
+      control r, phase: [0.75, 0.375].choose
     else
       control r, mix:0
     end
-    sample :sn_dub
+    sample :sn_dub, rate: -2
   end
   sleep 0.5
 end
@@ -29,7 +29,7 @@ end
 live_loop :breakfastt do
   sync :kick
   with_fx :reverb, room: 0.7, damp: 1 do
-    sample :loop_breakbeat, beat_stretch: 4, amp:5, rate:1, cutoff: 100
+    sample :loop_breakbeat, beat_stretch: 4, amp:2, rate:-1
   end
   sleep 4
 end
@@ -40,41 +40,43 @@ chords_ring = (ring, chord(:Eb1, :m, invert: 2), chord(:B1, :M), chord(:Db1, :m)
                      chord(:Eb1, :m, invert: 2), chord(:B1, :M), chord(:Db1, :m), chord(:Db1, :m)
 )
 
+
 currentTick = 0
 
 live_loop :bass do
-    currentTick = tick()
-    puts currentTick
     sync :snare
+    currentTick = tick;
+    puts currentTick
     use_synth :fm
-    with_transpose 12*0 do
-      play chords_ring[currentTick].choose, amp:2
+    with_fx :slicer, mix: 0.3 do
+      with_transpose 12*0 do
+        play_pattern_timed chords_ring[currentTick].take(3).shuffle, (ring 0.75, 0.75, 0.5),  amp:2
+      end
     end
-    sleep (ring 0.75, 0.75, 0.5)[currentTick]
 end
 
 live_loop :some_synth do
-  use_synth :tri
-  sync :snare
-  with_fx :wobble, phase: 0.75 do
+  use_synth :blade
+  sync :bass
+  with_fx :wobble, phase: 0.325 do
     with_transpose 12*3 do
-      play_pattern_timed chords_ring[currentTick].shuffle, 0.25, attack:1, sustain:0.5, release: 1, amp:0.1
+      play_pattern_timed chords_ring[currentTick].take(3).reflect, 0.125, sustain:0.5, release: 1, amp:0.5
     end
   end
 end
 
 live_loop :chordd do
-  sync :snare
-  use_synth :tb303
-  with_transpose 12*2 do
+  sync :bass
+  use_synth :piano
+  with_transpose 12*3 do
       with_fx :echo do |r|
-        if one_in(6)
-          control r, phase: 0.25, decay: 8
+        if one_in(1)
+          control r, phase: 0.125, decay: 4
         else
           control r, mix:0
         end
         with_fx :reverb do
-          play_chord chords_ring[currentTick], release:0.75
+          play_chord chords_ring[currentTick], release:0.75, amp: 3
       end
     end
   end
