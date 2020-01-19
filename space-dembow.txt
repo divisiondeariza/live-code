@@ -1,0 +1,44 @@
+## Sonic Pi triplets example
+## http://sonic-pi.net
+live_loop :beat do
+  sample :drum_heavy_kick
+  sleep 0.5
+end
+
+
+live_loop :triplets do
+  sync :beat
+  density 3 do
+    use_transpose tick*7%12
+    use_synth :fm
+    with_fx :slicer, phase:1 do
+      play :c2, sustain: 3, amp: 0.6
+      use_synth :piano
+      play chord(:c2, :M), sustain: 3
+    end
+    use_synth :blade
+    with_fx :echo, phase:0.25, decay:4  do
+      with_fx :reverb do
+	play_pattern_timed chord(:c2, :M), 1, amp: 0.1
+      end
+    end
+  end
+end
+
+live_loop :amenn do
+  sync :beat
+  sample :loop_breakbeat, beat_stretch:2
+  sleep 2
+end
+
+live_loop :snares do
+  sync :beat
+  ##| with_fx :reverb do
+    2.times do
+      sleep 0.375
+      sample :drum_snare_soft
+    end
+  sleep 0.125
+  sample :drum_snare_soft if tick%2==0
+  ##| end
+end

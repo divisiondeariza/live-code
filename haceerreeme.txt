@@ -1,0 +1,90 @@
+set_volume! 1.5
+use_bpm 50
+load_sample :drum_heavy_kick
+
+live_loop :drums do
+  ##| sample :drum_bass_hard, rate: 0.75
+  sleep 1
+  ##| sample :drum_heavy_kick
+  sleep 1
+end
+
+live_loop :snare do
+  sync :drums
+  with_fx :echo, phase: 0 do |r|
+    2.times do
+      sleep 0.75      
+      if one_in(6)
+        control r, phase: 0.125
+      end
+        ##| sample :drum_snare_hard, amp: 0.4
+    end
+  end
+end
+
+live_loop :cymbals do
+  sync :drums
+  ##| with_fx :echo do |r|
+    ##| sample :drum_cymbal_soft
+    ##| control r, phase: 0.0625/2, phase_slide: 1
+  ##| end
+end 
+
+live_loop :looped_drum do
+  sync :drums
+  ##| sample :loop_safari, beat_stretch:8, amp: 2
+  sleep 8
+end
+
+
+transpose = 0
+chords_list = [chord(:G3, :M), chord(:B3, :m), chord(:D3, :M), chord(:A3, :M)]
+
+live_loop :synths do
+  transpose = 7
+  use_transpose transpose
+  sync :drums
+  use_synth :piano 
+  with_fx :echo, phase: 0.125 + 0.0625 do
+    chords_list.each do |ch|
+      sleep 0.5
+      play ch, amp: 2
+      sleep 1.5
+    end
+  end
+end
+
+live_loop :bass do
+  sync :synths
+  use_synth :fm
+  use_transpose transpose - 12*2
+  chords_list.each do |ch|
+    ##| play ch[0]
+    sleep 2
+  end
+end
+
+live_loop :arpegio do
+  sync :synths
+  use_synth :mod_tri
+  use_transpose transpose
+  use_random_seed 60
+  chords_list.each do |ch|
+    sleep 0.25
+    with_fx :echo, decay: 4 do
+      4.times do
+        ##| play_pattern_timed ch.shuffle, 0.125, amp: 0.2
+      end
+    end
+    sleep 0.25
+  end
+end
+
+live_loop :amen do
+  sync :drums
+  with_fx :echo do
+    ##| sample :loop_breakbeat, beat_stretch:2, amp: 0.5
+  end
+  sleep 2
+end
+

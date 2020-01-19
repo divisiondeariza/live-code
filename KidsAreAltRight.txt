@@ -1,0 +1,68 @@
+use_debug false
+load_sample :bd_fat
+
+live_loop :drums do
+  sample :bd_fat, amp: 5
+  sleep 0.75
+  sample :bd_fat, amp: 5
+  sleep 0.75
+end
+
+live_loop :snares do
+  sync :drums
+  sleep 0.5625
+  with_fx :reverb, room: 1, mix: 0.3 do 
+    sample :drum_snare_hard, amp: 0.5
+  end
+  sleep 0.5625 
+  sample :drum_snare_soft
+  sleep 0.25 + 0.125
+  sample :drum_snare_soft
+end
+
+live_loop :amen do
+  sync :drums
+  ##| with_fx :pitch_shift, pitch:6, window_size: 1 do
+  ##|   ##| with_fx :filter
+    sample :loop_breakbeat, beat_stretch: 3, amp: 2
+  ##| end
+  sleep 3
+end
+
+
+chords_ring = (ring chord(:G3, :M7),  chord(:C3, :M), chord(:A3, :M7),  chord(:D3, :m7))
+
+currentChord = chords_ring[0]
+
+live_loop :chordsChooser do
+  sync :drums
+  sleep 0.75
+  currentChord = chords_ring.tick
+end
+
+live_loop :piano do
+  use_synth :pluck
+  sync :drums
+  with_fx :echo do 
+    play_chord currentChord, amp: 2, release: 0.25
+  end
+end
+
+
+live_loop :bass do
+  sync :drums
+  use_synth :fm
+  with_transpose -12*2 do
+    with_fx :reverb do
+      play_pattern_timed currentChord, 0.125 + 0.0625, attack: 0.125
+    end
+  end
+end 
+
+live_loop :arpegio do
+  sync :drums
+  use_synth :zawa
+  
+  play_pattern_timed currentChord.reflect.shuffle, 0.125 + 0.0625, release: 0.125
+end
+

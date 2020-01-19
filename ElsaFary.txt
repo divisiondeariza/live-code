@@ -1,0 +1,56 @@
+set_volume!  1
+#a swell to help you sleep
+
+chords_ring = (ring, [:c4, :e4, :g4, :b4], [:c4, :e4, :g4, :a4], [:c4, :d4, :e4, :g4] )
+
+current_chord = chords_ring[0]
+
+live_loop :chord_selector do
+  sync :try
+  sleep 1
+  current_chord = chords_ring.tick
+end
+
+live_loop :try do
+  use_synth :piano
+  use_transpose tick*7%12
+    with_fx :echo, phase: 0.25 do
+      play_chord current_chord, release: 1
+    end 
+    use_synth :beep
+    play current_chord[0] - 12*1
+  sleep 2
+end
+
+live_loop :arpegio do
+  use_random_seed (ring, 60, 61, 62, 63).tick
+  sync :try
+  use_synth :blade
+  play_pattern_timed current_chord.shuffle, 0.375
+end
+
+live_loop :drum_kick do
+  sync :try
+  4.times do
+    sample :drum_bass_hard
+    sleep 0.5
+  end
+end
+
+live_loop :snare do
+  sync :try
+  2.times do
+    2.times do
+      sleep 0.375
+      sample :drum_snare_hard
+    end
+    sleep 0.25
+  end
+end
+
+live_loop :breakbeat do
+  sync :try
+  sample :loop_safari, beat_stretch: 4, rate: 1, amp: 2
+  sample :loop_amen, beat_stretch: 4, rate: -1
+  ##| sample :loop_garzul, beat_stretch: 8, rate: 1
+end
