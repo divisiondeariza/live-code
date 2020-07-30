@@ -1,0 +1,92 @@
+use_bpm 90
+set_volume! 2
+
+current_chord = chord(:g3, :m)
+state = :foo
+
+live_loop :piano_foo do
+  sync :state_cue
+  use_synth :pluck
+  if state == :foo
+    with_fx :reverb do
+      density 6 do
+        sleep 1.5
+        play current_chord, amp: 1, sustain: 8, attack: 0, release: 4
+      end
+      if tick % 2 == 0
+        density 2 do
+          sleep 1
+          play current_chord, amp: 1, sustain: 8, attack: 0, release: 4
+        end
+      end
+    end
+  end
+end
+
+live_loop :piano_baz do
+  sync :state_cue
+  use_synth :blade
+  if state == :baz
+    4.times do
+      play current_chord, amp: 1, sustain: 0.5, attack: 0, release: 0
+      sleep 1
+    end
+  end
+end
+
+live_loop :bass do
+  sync :state_cue
+  cue :bass_cue
+  use_synth :fm
+  use_random_seed [3,3,2,1,3,1,1,1][beat%8]
+  with_fx :ixi_techno do
+    use_transpose -24
+    
+    if state == :foo
+      play_pattern_timed current_chord.mirror.take(6).shuffle, [0.75, 0.25, 0.5, 0.5, 0.25, 0.5].shuffle, amp: 0.3, release: 1.2
+    else
+      4.times do
+        play current_chord[0], amp: 0.3, release: 1.2
+        sleep 1
+      end
+    end
+  end
+end
+
+live_loop :state do
+  sync :beat_cue
+  cue :state_cue
+  states = [:foo, :baz]
+  position = tick
+  chords_map = (map foo: [[:b, :M, 3], [:gb, :M, 3], [:e, :M, 3], [:b, :M, 3],
+                          [:a, :M, 3], [:g, :M7, 3], [:gb, :add4, 3], [:gb, :M, 3]],
+                baz: [[:E, :M, 4], [:E, :M, 4], [:Db, :m, 4], [:Ab, :m, 4],
+                      [:Fb, :m, 4], [:B, :M7, 4], [:E, :M, 4], [:E, :M, 4]]
+                )
+  if chords_map[state].length == position
+    tick_reset
+    position = tick
+    state = states.choose
+    puts state
+  end
+  
+  current_chord =  chords_map[state].map {|note| chord( note[0], note[1] ) }[position]
+  sleep chords_map[state][position][2] - 0.5
+end
+
+
+live_loop :beat do
+  cue :beat_cue
+  sample :bd_haus
+  sleep 1
+end
+
+live_loop :dembow do
+  sync :beat
+  2.times do
+    sleep 0.75
+    sample :elec_hi_snare, amp: 1.5, cutoff: rrand_i(70, 90)
+  end
+  sleep 0.25
+  sample :drum_snare_soft if tick%2==0
+end

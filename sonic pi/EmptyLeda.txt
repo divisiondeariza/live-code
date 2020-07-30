@@ -1,0 +1,161 @@
+use_bpm 90
+set_volume! 2
+
+live_loop :beat do
+  ##| sample :bd_haus
+  sleep 1
+end
+
+live_loop :snares do
+  sync :beat
+  2.times do
+    sleep 0.75
+    sample :drum_snare_soft
+  end
+  sleep 0.25
+  sample :drum_snare_soft if factor?(tick, 4)
+end
+
+live_loop :cymbals do
+  sync :beat
+  with_fx :reverb do
+    use_random_seed 90
+    6.times do
+      sample :drum_cymbal_soft, cutoff: rrand_i(90, 120), finish: 0.1
+      sleep 0.25
+    end
+  end
+end
+
+current_chord = chord(:g3, :m)
+state = :foo
+
+live_loop :state do
+  sync :bass
+  states = [:foo, :baz]
+  position = tick
+  chords_map = (map foo: [[:b, :M], [:gb, :M], [:e, :M], [:b, :M],
+                          [:a, :M], [:g, :M7], [:gb, :add4], [:gb, :M]],
+                baz: [[:E, :M], [:E, :M], [:Db, :m], [:Ab, :m],
+                      [:Fb, :m], [:B, :M7], [:E, :M], [:E, :M]]
+                )
+  if chords_map[state].length == position
+    tick_reset
+    position = tick
+    state = states.choose
+  end
+  
+  current_chord =  chords_map[state].map {|note| chord( note[0], note[1] ) }[position]
+end
+
+live_loop :bass do
+  sync :beat
+  use_synth :fm
+  with_fx :slicer, phase: 0.25, smooth: 0.3 do
+    with_fx :ixi_techno do
+      use_transpose -24
+      play_pattern_timed current_chord.mirror.take(4).shuffle, 1, amp: rrand(0.1, 0.5), release: 1.2
+    end
+  end
+end
+
+live_loop :slided do
+  sync :bass
+  use_synth :mod_fm
+  use_transpose 12
+  sleep 0.25
+  with_fx :echo, phase: 0.75, decay: 4, max_phase: 4 do
+    play current_chord, amp: rrand(0.2, 0.3), mod_phase: [ 0.5, 0.75, 0.25, 1 ].choose if one_in(6)
+  end
+end
+
+
+
+live_loop :piano do
+  sync :bass
+  use_synth :dark_ambience
+  ##| with_fx :slicer, phase: 0.0625 do
+  ##| with_fx :echo do
+  ##| density 4 do
+  with_fx :reverb do
+    use_transpose -12
+    play current_chord, amp: 1, sustain: 4, release: 4
+    ##| end
+    
+  end
+end
+
+live_loop :cool_riff do
+  sync :piano
+  use_synth :fm
+  use_synth_defaults amp: rrand(0, 0.2), divisor: 40
+  with_fx :reverb do
+    with_fx :whammy do
+      2.times do
+        play current_chord[0]
+        sleep 0.75
+      end
+      sleep 0.25
+      play factor?(tick, 4)? current_chord[1] - 12 : current_chord[1]
+    end
+  end
+end
+
+live_loop :cool_riff2 do
+  sync :piano
+  use_synth :saw
+  use_synth_defaults amp: 0.7
+  with_fx :vowel, voice: 3 do
+    use_transpose -12
+    if one_in(6)
+      density 4 do
+        2.times do
+          play current_chord[0]
+          sleep 3
+        end
+        sleep 1
+        play factor?(tick, 4)? current_chord[1] - 12 : current_chord[1]
+        sleep 1
+      end
+    end
+  end
+end
+
+live_loop :arpeggio do
+  sync :piano
+  use_synth :tb303
+  with_fx :bpf, centre: 90 do
+    with_fx :gverb, damp: 0 do
+      if one_in(1)
+        use_transpose -12
+        use_random_seed 100
+        play_pattern_timed (current_chord + (current_chord + 12)).shuffle, 0.25, amp: 0.1
+      end
+    end
+  end
+end
+
+live_loop :backsound do
+  sync :bass
+  sample (ring, :tabla_re, :tabla_ghe2).choose
+end
+
+live_loop :cowbell do
+  sync :beat
+  with_fx :echo, phase: 0.125 + 0.0625, max_phase: 4, decay: 8 do
+    with_fx :slicer, phase: 0.0625 do
+      sample :elec_blip2, lpf: 100 if one_in(12)
+    end
+  end
+end
+
+live_loop :beep do
+  sync :bass
+  sample :elec_twip, amp: 1, cutoff: rrand(50, 120)
+end
+
+live_loop :drum_sample do
+  sync :bass
+  sample :loop_compus, beat_stretch:16, amp: 1
+  sleep 16
+end

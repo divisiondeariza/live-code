@@ -1,0 +1,47 @@
+puts current_bpm  
+use_bpm 90
+
+live_loop :bd do
+  sample :bd_haus
+  sleep 1
+end 
+
+live_loop :random_rifff do
+  #  uncomment to bring in:
+  sync :bd
+  use_transpose (ring 0, 7).tick
+  synth :beep, note: :e2, release: 0.5, cutoff: 100, amp: 1.5
+  use_synth :piano
+  with_fx :slicer, phase: 1.5 do |r|
+    play_chord chord(:e3, :minor), amp: 3, sustain: 1.5
+    control r, phase: 0.375, wave: 3 if beat%4==0
+  end  
+  use_synth :pluck
+  use_random_seed 73
+  notes = (scale :e3, :minor, num_octaves: 2).shuffle.take(8)
+  with_fx :reverb, room: 0.8 do
+    8.times do
+      play notes.tick, release: rrand(0.25, 0.75), cutoff: rrand(60, 130), amp: 2 if one_in(2)
+      sleep [0.25, 0.5, 0.75].choose
+    end
+  end
+end
+ 
+live_loop :drums do
+  use_random_seed 240
+  16.times do
+    sample :drum_cymbal_soft, cutoff: 110 if rand < 0.35
+    sleep 0.25
+  end
+end
+
+live_loop :snares do
+  sync :bd
+  2.times do
+    sleep 0.75
+    sample :drum_snare_soft, amp: 2
+  end
+  sleep 0.25
+  sample :drum_snare_soft, amp: 3 if tick%2==0
+end
+ 

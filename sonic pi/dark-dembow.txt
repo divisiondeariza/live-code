@@ -1,0 +1,49 @@
+use_bpm 80
+puts current_bpm
+
+transpose = 0
+
+live_loop :drums do
+  sample :drum_heavy_kick
+  sleep 1
+end
+
+live_loop :synth1 do
+  sync :drums
+  use_synth :blade
+  play_pattern (scale :e, :minor).shuffle.take(4), amp: 0.4
+  sleep 2
+end
+
+live_loop :ambi do
+  sync :synth1
+  sample :ambi_piano, beat_stretch:4
+  sleep 4
+end
+
+##| live_loop :transpose do
+##|   sync
+##| end
+
+live_loop :bass do
+  sync :synth1
+  use_synth :fm
+  bass_chord = tick%2==0 ? chord(:e2, :minor) : chord(:e1, :minor, num_octaves: 2, invert: 2).take(4)
+  play_pattern bass_chord.shuffle, 2, amp: 0.4
+end
+
+
+
+live_loop :snare_dembow do
+  sync :drums
+  with_fx :reverb, room: 1, damp: 1 do
+    2.times do
+      sleep 0.75
+      sample :drum_snare_soft, cutoff: 100
+    end
+    sleep 0.25
+    sample :drum_snare_soft, amp: 0.8 if tick%2==0
+  end
+end
+
+

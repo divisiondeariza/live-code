@@ -1,0 +1,2 @@
+#N canvas 2327 518 450 300 10;
+#X obj 56 36 pix_video homero_profesor;
