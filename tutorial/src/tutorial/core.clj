@@ -1,7 +1,10 @@
-(ns tutorial.core)
-
-(require '[clojure.repl :refer :all])
-(use 'overtone.live)
+(ns tutorial.core
+  (:require [clojure.repl :refer :all]
+            [overtone.live  :refer :all]
+            [overtone.inst.sampled-piano :refer :all]
+            [quil.core :as q]
+            )
+)
 (swap! live-config assoc-in [:sc-args :max-buffers] 1024)
 
 (def metro (metronome 90))
@@ -23,13 +26,22 @@
 (defn freesound-inst [id]
   (play-buf 1  (load-sample (freesound-path id)) :action FREE  ))
 
+(defn play-chord [a-chord inst]
+  (doseq [note a-chord] (inst note)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;; INSTRUMENTS ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (definst snare []
-  (play-buf 2  (load-sample (freesound-path 35608)) :action FREE ))
+  (out 0 (* 0.7 (freesound-inst 35608)))
+  (out 1 (* 0.8 (freesound-inst 35608)))
+  ;(play-buf 2  (load-sample (freesound-path 35608)) :action FREE )
+  )
 
 (definst kick []
-  (play-buf 2 (load-sample (freesound-path 2086)) :action FREE ))
+  (out 0 (* 0.7 (freesound-inst 2086)))
+  (out 1 (* 0.7 (freesound-inst 2086)))
+  ;(play-buf 2 (load-sample (freesound-path 2086)) :action FREE )
+ )
 
 (definst close-hat []
   (out 0 (* 0.3 (freesound-inst 802)))
@@ -43,7 +55,10 @@
         filt (bpf (+ sqr noise) 9000 0.5)]
     (* amp env filt)))
 
-(definst saw-wave [freq 440 attack 0.01 sustain 0.4 release 0.1 vol 0.4]
+(defn piano2 [note]
+  (sampled-piano note :level 0.7 :sustain 0.3 :decay 0.5 :curve -2))
+
+(definst saw-wave [freq 440 attack 0.01 sustain 0.2 release 0.1 vol 0.4]
   (* (env-gen (env-lin attack sustain release) 1 1 0 1 FREE)
      (saw freq)
      vol))
@@ -57,14 +72,11 @@
         filt (env-gen (perc 0.001 2) :action FREE)]
     (lpf (* 0.5 (* src filt)) 1250)))
 
-
+(adsr)
 (defn saw2 [music-note]
   (saw-wave (midi->hz (note music-note))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; MUSIK  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn play-chord [a-chord]
-  (doseq [note a-chord] (saw2 note)))
 
 (defn dembow [metro number-of-cycle]
   (let [beat        (metro)
@@ -94,13 +106,33 @@
 (defn bass-seq [metro]
   (let [beat (metro)]
     (play-on metro beat [0 2 4 6] (fn [] (pick 60)) )
-    (play-on metro beat [7] (fn [] (pick 62)) )
+    (play-on metro beat [7] (fn [] (pick (- 67 12))) )
     (apply-by (metro (+ 8 beat)) #'bass-seq metro []))
   )
+
+(defn chords-seq [metro]
+  (let [beat (metro)
+        ]
+    (doseq [ [ch t] (concat
+                     (map list
+                          (apply concat
+                           (repeat 2 [[:C4 :major] [:A4 :minor] [:D4 :minor] [:G4 :major7]]))
+                           [0 1.5 3 4 8 9.5 11 12])
+                     [[[:G4 :dim7] 13.5]]
+                     )
+            ]
+           (play-on metro beat [t]
+                    (fn [] (play-chord (apply chord ch) piano2)))
+           )
+    (apply-by (metro (+ 16 beat)) #'chords-seq metro [])
+    )
+)
+
 
 (defn play-all []
   (stop)
   (let [metro (metronome 90)]
+    (chords-seq metro)
     (bass-seq metro)
     (dembow metro 0)
   )
@@ -110,5 +142,5 @@
 (play-all)
 
 (stop)
-
-(play-chord (chord :C4 :major))
+ (chord :C4 :major)
+(play-chord (chord :C4 :major) sampled-piano)
