@@ -3,6 +3,7 @@
             [overtone.live  :refer :all]
             [overtone.inst.sampled-piano :refer :all]
             [quil.core :as q]
+            [tutorial.utils :refer [freesound-inst play-chord play-on]]
             )
 )
 (swap! live-config assoc-in [:sc-args :max-buffers] 1024)
@@ -11,23 +12,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; UTILS ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn play-on [metro first-beat times-after-beat instrument]
-  (at (metro
-      (+ first-beat (first  times-after-beat)))
-      (instrument))
-  (when (> (count (rest times-after-beat)) 0)
-    (play-on metro first-beat (rest times-after-beat) instrument)
-    ))
 
-(defn if-nth-times [n actual-count then else?]
-  (if (= 0 (mod actual-count n)) then else?)
-  )
-
-(defn freesound-inst [id]
-  (play-buf 1  (load-sample (freesound-path id)) :action FREE  ))
-
-(defn play-chord [a-chord inst]
-  (doseq [note a-chord] (inst note)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;; INSTRUMENTS ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -56,7 +41,7 @@
     (* amp env filt)))
 
 (defn piano2 [note]
-  (sampled-piano note :level 0.7 :sustain 0.3 :decay 0.5 :curve -2))
+  (sampled-piano note :attack 0 :level 0.5 :sustain 0.3 :decay 0.5 :curve -4))
 
 (definst saw-wave [freq 440 attack 0.01 sustain 0.2 release 0.1 vol 0.4]
   (* (env-gen (env-lin attack sustain release) 1 1 0 1 FREE)
@@ -142,5 +127,5 @@
 (play-all)
 
 (stop)
- (chord :C4 :major)
+(chord :C4 :major)
 (play-chord (chord :C4 :major) sampled-piano)
