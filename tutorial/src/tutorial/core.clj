@@ -3,7 +3,9 @@
             [overtone.live  :refer :all]
             [overtone.inst.sampled-piano :refer :all]
             [quil.core :as q]
+            [quil.middleware :as m]
             [tutorial.utils :refer [freesound-inst play-chord play-on]]
+            [shadertone.tone :as t]
             )
 )
 (swap! live-config assoc-in [:sc-args :max-buffers] 1024)
@@ -12,7 +14,9 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; UTILS ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
+;; (t/start "disco.glsl"
+;;          :width 800 :height 600
+;;          :textures [:overtone-audio])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;; INSTRUMENTS ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -82,6 +86,9 @@
 
         ]
 
+
+
+
     (play-on metro beat kick-times kick)
     (play-on metro beat snare-times snare)
     (play-on metro beat c-hat-times close-hat)
@@ -124,8 +131,58 @@
   ;(apply-by (metro (+ 2 beat)) #'player (+ 2 beat) [])
   )
 
+;; (t/start "mouse.glsl")
 (play-all)
 
 (stop)
 (chord :C4 :major)
 (play-chord (chord :C4 :major) sampled-piano)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def PHI (/ (+ 1 (Math/sqrt 5)) 2))
+
+(def palette
+  (cycle [[249 187  78]
+          [ 70 162 141]
+          [220 112 100]]))
+
+(defn setup []
+  (q/frame-rate 10))
+
+(defn draw []
+  (q/no-stroke)
+  (q/background 255 255 200)
+  (q/with-translation [(/ (q/width) 2) (/ (q/height) 2)]
+    (doseq [i (range 1000)]
+      (let [v (+ (mod (q/frame-count) 3) i)
+            ang (* v PHI q/TWO-PI)
+            r   (* (Math/sqrt v) (q/width) (/ 70))
+            x   (* (q/cos ang) r)
+            y   (* (q/sin ang) r)
+            sz  (+ 3 (* i 0.002))]
+        (apply q/fill (nth palette i))
+        (q/ellipse x y sz sz)))))
+
+(q/defsketch golden-ratio-flowe
+  :host "host"
+  :size [500 500]
+  :setup setup
+  :draw draw
+
+  :middleware [m/fun-mode]))
+
+
+(defn setup []
+  (let [myAnimation (gifAnimation.Gif. (quil.applet/current-applet) "tenor.gif") ]
+    (hash-map :myAnimation myAnimation ))
+  )
+
+(defn draw [state]
+ (q/image (:myAnimation state) 10 10)
+)
+
+
+{:myAnimation "tenor.gif"}
+
+(hash-map :myAnimation "tenor.gif")
