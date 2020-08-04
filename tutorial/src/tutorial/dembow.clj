@@ -8,49 +8,42 @@
 (def kit {:kick  instruments/kick
           :snare instruments/snare})
 
-(defn pattern2phrase [[instrument pattern]]
-  (->> (map-indexed(fn [index note] [index note]) pattern)
-       (filter (fn [[index note]] (not= note 0)))
-       (map (fn [[index note]]
-              {:time (* index 0.25)
-               :duration 1
-               :drum instrument
-               :part :dembow}))
-     )
+(defn pattern2phrase
+  ([length [instrument pattern]] (pattern2phrase length [instrument pattern] 0))
+  ([length [instrument pattern] offset]
+    (->> (map-indexed(fn [index note] [index note]) pattern)
+         (filter (fn [[index note]] (not= note 0)))
+         (map (fn
+                [[index note]]
+                (let [time (+ (* (- index 1) length) offset)]
+                  (if (vector? note)
+                    (pattern2phrase (/ length (count note)) [instrument note] time)
+                    {:time time
+                     :duration 1
+                     :drum instrument
+                     :part :dembow}
+                   )
+                )
+              )
+              )
+         (flatten)
+   )
   )
-
-
+ )
 
 (def dembow-pattern (->>
                      {:kick  [1 0 0 0 1 0 0 0]
-                      :snare [0 0 1 0 0 0 0 1]}
+                      :snare [0 0 0 1 0 0 1 0]}
 
-                     (map pattern2phrase)
+                     (map (partial pattern2phrase 0.25))
                      (apply with)
                      )
   )
-
-dembow-pattern
 
 (defmethod live/play-note :dembow [note]
   (when-let [drum (-> (get kit (:drum note)))]
     (drum)))
 
-(->> dembow-pattern
-       (tempo (bpm 110))
+(->> (times 2 dembow-pattern)
+       (tempo (bpm 90))
        live/play)
-
-
-
-( dembow-pattern)
-
-
-
-
-(first dembow-pattern)
-
-
-
-
-
-dembow-pattern
