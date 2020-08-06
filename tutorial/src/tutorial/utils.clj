@@ -1,5 +1,28 @@
 (ns tutorial.utils
-  (:require  [overtone.live  :refer :all]))
+  (:require  [overtone.live  :refer :all]
+             [leipzig.melody :refer :all]))
+
+(defn pattern2phrase
+  "converts a pattern into a leipzig phrase.
+   e.g. (pattern2phrase 0.25 [:inst [1 0 0 1])
+  should return:
+  [{:time 0,   :duration 0.25, :drum :inst}
+   {:time 0.75 :duration 0.25, :drum :inst}]"
+
+  ([length [instrument pattern]]
+   (pattern2phrase length [instrument pattern] 0))
+
+  ([length [instrument pattern] offset]
+   (->> pattern
+        (map (fn [step]
+               (if (vector? step)
+                 (pattern2phrase (/ length (count step)) [instrument step] (+ offset))
+                 {:duration length, :drum (if (= step 0) nil instrument)})))
+        (flatten)
+        (mapthen (fn [step] [(assoc step :time 0)]))
+        ;; Times don't sum up exactly with non 2 power rhythms, let's hope this doesn't break anything :)
+        )))
+
 
 (defn play-on [metro first-beat times-after-beat instrument]
   (at (metro
