@@ -8,31 +8,34 @@
 
 (swap! live-config assoc-in [:sc-args :max-buffers] 1024)
 
-(def metro (metronome 90))
+;;;;;;;;;;;;;;;;;; Drumkit ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (definst snare []
-  (out 0 (* 0.7 (freesound-inst 35608)))
-  (out 1 (* 0.8 (freesound-inst 35608)))
-  ;(play-buf 2  (load-sample (freesound-path 35608)) :action FREE )
+  (pan2 (freesound-inst 35608))
   )
 
 (definst kick []
-  (out 0 (* 0.7 (freesound-inst 2086)))
-  (out 1 (* 0.7 (freesound-inst 2086)))
-  ;(play-buf 2 (load-sample (freesound-path 2086)) :action FREE )
- )
+  (pan2 (freesound-inst 2086))
+  )
 
 (definst close-hat []
-  (out 0 (* 0.3 (freesound-inst 802)))
-  (out 1 (* 0.3 (freesound-inst 802)))
-)
+  (pan2 (freesound-inst 802))
+  )
 
-(definst c-hat [amp 0.8 t 0.04]
-  (let [env (env-gen (perc 0.001 t) 1 1 0 1 FREE)
-        noise (white-noise)
-        sqr (* (env-gen (perc 0.01 0.04)) (pulse 880 0.2))
-        filt (bpf (+ sqr noise) 9000 0.5)]
-    (* amp env filt)))
+(definst open-snare []
+  (pan2 (freesound-inst 16309))
+  )
+
+(definst open-hat []
+  (pan2 (freesound-inst 26657))
+  )
+
+(definst clap []
+  (pan2 (freesound-inst 48310))
+  )
+
+;;;;;;;;;;;;;;;;;; Others ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 (defn piano2 [note]
   (sampled-piano note :attack 0 :level 0.5 :sustain 0.3 :decay 0.5 :curve -4))
