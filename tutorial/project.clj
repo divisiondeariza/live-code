@@ -7,10 +7,10 @@
                  [overtone "0.10.6"  ]
                  [quil "3.1.0"]
                  [leipzig "0.10.0"]
-                 [shadertone "0.2.5"]]
+                 [shadertone "0.2.5"]
+                 [clj-http "2.3.0"]
+                 [sonic-pi "0.1.0-SNAPSHOT"] ;checkout
+                 ]
   :resource-paths [
                    "gifAnimation/library/gifAnimation.jar"
                    ]
-
-  :plugins [[cider/cider-nrepl "0.25.2"]]
-  :repl-options {:init-ns tutorial.core})
