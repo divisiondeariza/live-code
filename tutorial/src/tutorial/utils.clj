@@ -1,7 +1,26 @@
 (ns tutorial.utils
   (:require  [overtone.live  :refer :all]
-             [leipzig.melody :refer :all]))
+             [leipzig.melody :refer :all]
+             [overtone.music.pitch :as pitch]))
 
+
+(defn chordvector2arpeggio
+  "Generates an arpeggio from a chord vector"
+  [chordvector notes-length]
+  (let [root        (first  chordvector)
+        chord-name  (second chordvector)
+        bars        (last chordvector)
+        total-notes (/ bars notes-length)
+        durations   (take total-notes (repeat notes-length))]
+    (->> (pitch/chord root chord-name)
+         (sort)
+         (cycle)
+         (take total-notes)
+         (vector durations)
+         (apply phrase)
+         )
+    )
+  )
 
 (defn pattern2phrase
   "converts a pattern into a leipzig phrase.
