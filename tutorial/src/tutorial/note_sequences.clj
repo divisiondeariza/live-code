@@ -3,8 +3,12 @@
             [leipzig.live :as live]
             [clj-http.client :as client]
             [clojure.data.json :as json]
-            [clojure.walk :refer [keywordize-keys]]
+            [clojure.walk :refer [keywordize-keys stringify-keys]]
+            [leipzig.melody :refer :all]
+            [overtone.music.pitch :as pitch]
    ))
+
+
 
 (defn phrase2noteseq [phrase]
   (let [stepsPerQuarter 4]
@@ -14,24 +18,16 @@
                                                           (+  quantizedStartStep))]
                                {:pitch (:pitch note)
                                 :quantizedStartStep quantizedStartStep
-                                :quantizedEndStep quantizedEndStep}))
+                                :quantizedEndStep quantizedEndStep
+                                :instrument "1"}))
                    phrase)}))
-
-(defn coconet []
-  (->> (client/get "http://localhost:3000/coconet" {:accept :json})
-       (:body)
-       (json/read-str)
-       (keywordize-keys)
-       (magenta2leipzig)
-       ))
 
 
 (defn magenta2leipzig [note_sequence]
   (let [notes (:notes note_sequence)
         stepsPerQuarter (-> note_sequence
                             :quantizationInfo
-                            :stepsPerQuarter)
-        ]
+                            :stepsPerQuarter)]
     (map #(let [time     (-> % :quantizedStartStep
                              Integer/parseInt
                              (/ stepsPerQuarter ))
@@ -44,3 +40,24 @@
                       :duration duration
                       :instrument (:instrument %)))
          notes)))
+
+
+(defn coconet [note_sequence]
+  (->> (client/post "http://localhost:3000/coconet"
+                    {:accept :json
+                     :as :jsoncontent-type
+                     :body  (json/write-str
+                             (stringify-keys
+                              {:note_sequence note_sequence}))
+                     :content-type :json
+                     ;:body "{\"json\": \"input\"}"
+                     })
+       (:body)
+       (json/read-str)
+       (keywordize-keys)
+       (magenta2leipzig))
+;; (json/write-str {:note_sequence note_sequence})
+  )
+
+
+;;(coconet 0)
