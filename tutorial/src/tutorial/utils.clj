@@ -3,24 +3,39 @@
              [leipzig.melody :refer :all]
              [overtone.music.pitch :as pitch]))
 
+(defn chordvector2strum
+  ([chordvector strum-duration offset-start]
+   (chordvector2strum chordvector strum-duration offset-start identity))
+  ([chordvector strum-duration offset-start f_transform]
+   (let [root          (first  chordvector)
+         chord-name    (second chordvector)
+         bars          (last chordvector)
+         total-repeats (/ bars strum-duration)
+         durations     (take total-repeats (repeat strum-duration))]
+     (->> (pitch/chord root chord-name)
+          (f_transform)
+          (repeat total-repeats)
+          (vector durations)
+          (apply phrase)
+          (where :time #(+ offset-start %))
+          (all :duration (- strum-duration offset-start))))))
 
 (defn chordvector2arpeggio
   "Generates an arpeggio from a chord vector"
-  [chordvector notes-length]
-  (let [root        (first  chordvector)
-        chord-name  (second chordvector)
-        bars        (last chordvector)
-        total-notes (/ bars notes-length)
-        durations   (take total-notes (repeat notes-length))]
-    (->> (pitch/chord root chord-name)
-         (sort)
-         (cycle)
-         (take total-notes)
-         (vector durations)
-         (apply phrase)
-         )
-    )
-  )
+
+  ([chordvector notes-length f-transform]
+   (let [root        (first  chordvector)
+         chord-name  (second chordvector)
+         bars        (last chordvector)
+         total-notes (/ bars notes-length)
+         durations   (take total-notes (repeat notes-length))]
+     (->> (pitch/chord root chord-name)
+          (sort)
+          (f-transform)
+          (cycle)
+          (take total-notes)
+          (vector durations)
+          (apply phrase)))))
 
 (defn pattern2phrase
   "converts a pattern into a leipzig phrase.
