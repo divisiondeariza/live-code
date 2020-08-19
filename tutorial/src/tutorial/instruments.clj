@@ -3,10 +3,36 @@
             [overtone.live  :refer :all]
             [overtone.inst.sampled-piano :refer :all]
             [tutorial.utils :refer [freesound-inst]]
-            )
-  )
+            [sonic-pi.basic :as basic]
+            [sonic-pi.atmos :as atmos]
+            [sonic-pi.traditional :as traditional]
+            ;[sonic-pi.experimental :as experimental]
+            [sonic-pi.bell :as bell]
+            [sonic-pi.tech :as tech]
+            [sonic-pi.noise :as noise]
+            [sonic-pi.retro :as retro] ))
 
 (swap! live-config assoc-in [:sc-args :max-buffers] 1024)
+
+;;;;;;;;;;;;;;;;; Sonic Pi  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def sonic-pi-names {"atmos" ["hollow" "growl" "dark_ambience"]})
+
+(doseq [[instrument-class names] (map identity sonic-pi-names)]
+  (doseq [n names]
+    (println n)
+    (interns *ns* (symbol (str instrument-class "-" n))
+                  (resolve (str instrument-class "/sonic-pi-" n )))))
+
+(def atmos-hollow atmos/sonic-pi-)
+(def atmos-hollow atmos/sonic-pi-growl)
+
+(def basic basic)
+(def traditional traditional)
+(def bell bell)
+(def tech tech)
+(def noise noise)
+(def retro retro)
 
 ;;;;;;;;;;;;;;;;;; Drumkit ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -34,8 +60,14 @@
   (pan2 (freesound-inst 48310))
   )
 
-;;;;;;;;;;;;;;;;;; Others ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(definst boom []
+  (pan2 (freesound-inst 44293))
+  )
 
+(definst snap []
+  (pan2 (freesound-inst 87731))
+  )
+;;;;;;;;;;;;;;;;;; Others ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn piano2 [note]
   (sampled-piano note :attack 0 :level 0.5 :sustain 0.3 :decay 0.5 :curve -4))
