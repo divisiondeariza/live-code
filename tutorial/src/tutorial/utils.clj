@@ -3,16 +3,20 @@
              [leipzig.melody :refer :all]
              [overtone.music.pitch :as pitch]))
 
+(defn chordvector2chord
+  [chordvector]
+  (let [root          (first  chordvector)
+        chord-name    (second chordvector)]
+    (pitch/chord root chord-name)))
+
 (defn chordvector2strum
   ([chordvector strum-duration offset-start]
    (chordvector2strum chordvector strum-duration offset-start identity))
   ([chordvector strum-duration offset-start f_transform]
-   (let [root          (first  chordvector)
-         chord-name    (second chordvector)
-         bars          (last chordvector)
+   (let [bars          (last chordvector)
          total-repeats (/ bars strum-duration)
          durations     (take total-repeats (repeat strum-duration))]
-     (->> (pitch/chord root chord-name)
+     (->> (chordvector2chord chordvector)
           (f_transform)
           (repeat total-repeats)
           (vector durations)
@@ -24,12 +28,10 @@
   "Generates an arpeggio from a chord vector"
 
   ([chordvector notes-length f-transform]
-   (let [root        (first  chordvector)
-         chord-name  (second chordvector)
-         bars        (last chordvector)
+   (let [bars        (last chordvector)
          total-notes (/ bars notes-length)
          durations   (take total-notes (repeat notes-length))]
-     (->> (pitch/chord root chord-name)
+     (->> (chordvector2chord chordvector)
           (sort)
           (f-transform)
           (cycle)
