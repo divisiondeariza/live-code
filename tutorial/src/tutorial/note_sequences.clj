@@ -6,21 +6,50 @@
             [clojure.walk :refer [keywordize-keys stringify-keys]]
             [leipzig.melody :refer :all]
             [overtone.music.pitch :as pitch]
-   ))
+            ))
+
+(defn gcd [a b]
+        (if (zero? b)
+          a
+          (recur b (mod a b))))
 
 
+(defn lcm
+      [a b]
+      (/ (* a b) (gcd a b)))
+
+(defn phrase2noteseq-note
+  [note stepsPerQuarter]
+  (let [quantizedStartStep (-> note :time
+                               (* stepsPerQuarter))
+        quantizedEndStep   (-> note
+                               :duration
+                               (* stepsPerQuarter)
+                               (+  quantizedStartStep))]
+    {:pitch (:pitch note)
+     :quantizedStartStep quantizedStartStep
+     :quantizedEndStep quantizedEndStep}))
 
 (defn phrase2noteseq [phrase]
-  (let [stepsPerQuarter 4]
+  (let [stepsPerQuarter (->> phrase
+                             (map #(/ 1 (:duration %)))
+                             (reduce lcm))]
       {:quantizationInfo {:stepsPerQuarter stepsPerQuarter}
-       :notes (map (fn [note] (let [quantizedStartStep (-> note :time (* stepsPerQuarter))
-                                   quantizedEndStep   (-> note :duration (* stepsPerQuarter)
-                                                          (+  quantizedStartStep))]
-                               {:pitch (:pitch note)
-                                :quantizedStartStep quantizedStartStep
-                                :quantizedEndStep quantizedEndStep
-                                :instrument "1"}))
-                   phrase)}))
+       :notes (map #(phrase2noteseq-note % stepsPerQuarter) phrase)}))
+
+(defn magenta2leipzig-note
+  [note, stepsPerQuarter]
+  (let [time     (-> note :quantizedStartStep
+                             Integer/parseInt
+                             (/ stepsPerQuarter ))
+                duration (-> note :quantizedEndStep
+                             Integer/parseInt
+                             (/ stepsPerQuarter )
+                             (- time))]
+            (hash-map :pitch (:pitch note)
+                      :time time
+                      :duration duration
+                      :instrument (:instrument note))))
 
 
 (defn magenta2leipzig [note_sequence]
@@ -28,36 +57,23 @@
         stepsPerQuarter (-> note_sequence
                             :quantizationInfo
                             :stepsPerQuarter)]
-    (map #(let [time     (-> % :quantizedStartStep
-                             Integer/parseInt
-                             (/ stepsPerQuarter ))
-                duration (-> % :quantizedEndStep
-                             Integer/parseInt
-                             (/ stepsPerQuarter )
-                             (- time))]
-            (hash-map :pitch (:pitch %)
-                      :time time
-                      :duration duration
-                      :instrument (:instrument %)))
-         notes)))
+    (map #(magenta2leipzig-note % stepsPerQuarter) notes)))
 
 
-(defn coconet [note_sequence]
-  (->> (client/post "http://localhost:3000/coconet"
-                    {:accept :json
-                     :as :jsoncontent-type
-                     :body  (json/write-str
-                             (stringify-keys
-                              {:note_sequence note_sequence}))
-                     :content-type :json
-                     ;:body "{\"json\": \"input\"}"
-                     })
-       (:body)
-       (json/read-str)
-       (keywordize-keys)
-       (magenta2leipzig))
-;; (json/write-str {:note_sequence note_sequence})
-  )
-
-
-;;(coconet 0)
+(defn coconet [seed-phrase]
+  (let [note_sequence (phrase2noteseq seed-phrase)
+        stepsPerQuarter (-> note_sequence
+                            :quantizationInfo
+                            :stepsPerQuarter)]
+       (->> (client/post "http://localhost:3000/coconet"
+                         {:accept :json
+                          :as :jsoncontent-type
+                          :body  (json/write-str
+                                  (stringify-keys
+                                   {:note_sequence note_sequence}))
+                          :content-type :json})
+            (:body)
+            (json/read-str)
+            (keywordize-keys)
+            (#(assoc-in % [ :quantizationInfo :stepsPerQuarter] stepsPerQuarter))
+            (magenta2leipzig))))
