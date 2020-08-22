@@ -60,6 +60,14 @@
         ;; Times don't sum up exactly with non 2 power rhythms, let's hope this doesn't break anything.
         )))
 
+(defmacro defdrum-freesound
+  [d-name drum-id]
+  `(definst ~d-name
+    [~'level 1 ~'rate 1 ~'attack 0 ~'decay 1 ~'sustain 1 ~'release 0.1 ~'curve -4 ~'gate 1]
+    (let [env# (env-gen (adsr ~'attack ~'decay ~'sustain ~'release ~'level ~'curve)
+                        :gate ~'gate
+                        :action FREE)]
+      (pan2 (~'* env# (freesound-inst ~drum-id))))))
 
 (defn pattern-map2phrase
   [pattern-map]

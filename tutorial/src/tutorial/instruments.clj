@@ -2,7 +2,7 @@
  (:require [clojure.repl :refer :all]
             [overtone.live  :refer :all]
             [overtone.inst.sampled-piano :refer :all]
-            [tutorial.utils :refer [freesound-inst]]
+            [tutorial.utils :refer [defdrum-freesound]]
             [sonic-pi.basic :as basic]
             [sonic-pi.atmos :as atmos]
             [sonic-pi.traditional :as traditional]
@@ -10,66 +10,47 @@
             [sonic-pi.bell :as bell]
             [sonic-pi.tech :as tech]
             [sonic-pi.noise :as noise]
-            [sonic-pi.retro :as retro] ))
+            [sonic-pi.retro :as retro]))
 
 (swap! live-config assoc-in [:sc-args :max-buffers] 1024)
 
 ;;;;;;;;;;;;;;;;; Sonic Pi  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def sonic-pi-names {"atmos" ["hollow" "growl" "dark_ambience"]})
+(def sonic-pi-names {"basic" ["fm"    "mod_fm"
+                              "saw"   "mod_saw"
+                              "dsaw"  "mod_dsaw"
+                              "beep"  "mod_sine"
+                              "subpulse" "square"
+                              "tri"  "dtri"
+                              "pulse" "mod_pulse"
+                              "dpulse"]
+                     "atmos" ["hollow" "growl" "dark_ambience"]
+                     "traditional" ["pluck" "blade"]
+                     "bell"  ["dull_bell" "pretty_bell"]
+                     "tech"  ["tech_saws"]
+                     "noise" ["noise" "bnoise" "pnoise" "gnoise" "cnoise"]
+                     "retro" ["tb303" "hoover" "supersaw" "zawa" "prophet"]})
 
 (doseq [[instrument-class names] (map identity sonic-pi-names)]
   (doseq [n names]
-    (println n)
-    (interns *ns* (symbol (str instrument-class "-" n))
-                  (resolve (str instrument-class "/sonic-pi-" n )))))
+    (intern *ns* (symbol (str instrument-class "-" n))
+            (resolve (symbol  (str instrument-class "/sonic-pi-" n ))))))
 
-(def atmos-hollow atmos/sonic-pi-)
-(def atmos-hollow atmos/sonic-pi-growl)
-
-(def basic basic)
-(def traditional traditional)
-(def bell bell)
-(def tech tech)
-(def noise noise)
-(def retro retro)
-
+(def piano sampled-piano)
 ;;;;;;;;;;;;;;;;;; Drumkit ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(definst snare []
-  (pan2 (freesound-inst 35608))
-  )
+(defdrum-freesound snare      35608)
+(defdrum-freesound kick       2086)
+(defdrum-freesound close-hat  802)
+(defdrum-freesound open-snare 16309)
+(defdrum-freesound open-hat   26657)
+(defdrum-freesound clap       48310)
+(defdrum-freesound boom       44293)
+(defdrum-freesound snap       87731)
 
-(definst kick []
-  (pan2 (freesound-inst 2086))
-  )
-
-(definst close-hat []
-  (pan2 (freesound-inst 802))
-  )
-
-(definst open-snare []
-  (pan2 (freesound-inst 16309))
-  )
-
-(definst open-hat []
-  (pan2 (freesound-inst 26657))
-  )
-
-(definst clap []
-  (pan2 (freesound-inst 48310))
-  )
-
-(definst boom []
-  (pan2 (freesound-inst 44293))
-  )
-
-(definst snap []
-  (pan2 (freesound-inst 87731))
-  )
 ;;;;;;;;;;;;;;;;;; Others ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn piano2 [note]
+(defn piano [note]
   (sampled-piano note :attack 0 :level 0.5 :sustain 0.3 :decay 0.5 :curve -4))
 
 (definst saw-wave [freq 440 attack 0.01 sustain 0.2 release 0.1 vol 0.4]
@@ -86,6 +67,5 @@
         filt (env-gen (perc 0.001 2) :action FREE)]
     (lpf (* 0.5 (* src filt)) 1250)))
 
-(adsr)
 (defn saw2 [music-note]
   (saw-wave (midi->hz (note music-note))))
